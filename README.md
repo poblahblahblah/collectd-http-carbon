@@ -7,10 +7,10 @@ JSON directly from collectd and POSTs to a Sinatra app which
 parses the data and sends the parsed data, ready for carbon
 consumption, to the AMQP message queue.
 
-This is inspired by:
-Joe Miller'si perl [collectd-graphite](https://raw.github.com/joemiller/collectd-graphite)
-Jordan Sisel's node [collectd-to-graphite](https://github.com/loggly/collectd-to-graphite)
-Gregory Szorc's [collectd-carbon](https://github.com/indygreg/collectd-carbon)
+This is inspired by:  
+Joe Miller'si perl [collectd-graphite](https://raw.github.com/joemiller/collectd-graphite)  
+Jordan Sisel's node [collectd-to-graphite](https://github.com/loggly/collectd-to-graphite)  
+Gregory Szorc's [collectd-carbon](https://github.com/indygreg/collectd-carbon)  
 
 ## Dependencies
 
