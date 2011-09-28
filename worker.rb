@@ -6,9 +6,11 @@ Thread.abort_on_exception = true
 
 class Worker < Sinatra::Application
   post '/post-collectd' do
-    prefix      = "collectd"
+    prefix      = "eharmony"
     amqp_queue  = "graphite"
-    amqp_data   = {}
+    channel     = AMQP.channel
+    exchange    = channel.topic(amqp_queue, :auto_delete => false, :durable => true)
+    queue       = channel.queue(Socket.gethostname)
     json        = StringIO.new(request.body.read)
     parser      = Yajl::Parser.new
     data_array  = parser.parse(json)
@@ -22,29 +24,19 @@ class Worker < Sinatra::Application
       type_string   = %W(#{type_string} #{type_instance}).join('-') if !type_instance.empty?
       # collectd wrote their own time standard, which is a 30 bit left shift.
       # for collectd 4.x we shouldn't do anything, since the time is unix epoch.
-      # for collectd 5.x we need to do a 30bit right shift.
+      # for collectd 5.x we need to do a 30bit right shift. joy.
       time = time >> 30 if time.to_s.length > 11
       d['dsnames'].each do |ds|
         routing_key   = [ prefix, hostname, plugin_string, type_string, ds ].join('.').gsub('.-', '.') 
         routing_key   = routing_key.squeeze('..').gsub('.value', '').gsub(' ', '_')
         values        = d['values'][i]
         data          = [ values, time ].join(' ')
-        amqp_data[routing_key] = [] if !amqp_data.has_key?(routing_key)
-        amqp_data[routing_key] << data
-        i +=1
-      end
-      begin 
-        channel = AMQP.channel
-        exchange = channel.topic(amqp_queue, :auto_delete => false, :durable => true)
-        queue = channel.queue(Socket.gethostname)
-        amqp_data.each do |key, value|
-          value.each do |v|
-            exchange.publish(v, :routing_key => key)
-            amqp_data.delete(key)
-          end
+        begin
+          exchange.publish(data, :routing_key => routing_key)
+        rescue => exception
+          retry
         end
-      rescue => exception
-        retry
+        i +=1
       end
     end
   end
