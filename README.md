@@ -1,11 +1,10 @@
 # collectd-http-carbon
 
 This acts as a bridge between collectd's write_http plugin
-and an AMQP message queueing system (we use rabbitmq), which
-is tied to carbon by way of their AMQP bindings. This sends
-JSON directly from collectd and POSTs to a Sinatra app which
-parses the data and sends the parsed data, ready for carbon
-consumption, to the AMQP message queue.
+and an AMQP message queueing system (we use rabbitmq) or 
+directly to carbon. JSON sent from collectd get POSTed to
+this Sinatra app which mangles the data ready for consumption
+by carbon.
 
 This is inspired by:  
 Joe Miller'si perl [collectd-graphite](https://raw.github.com/joemiller/collectd-graphite)  
@@ -14,14 +13,14 @@ Gregory Szorc's [collectd-carbon](https://github.com/indygreg/collectd-carbon)
 
 ## Dependencies
 
-native packages:
-  ruby-devel
+native packages:  
+  ruby-devel  
 
-gems:
-  eventmachine --pre
-  amqp
-  sinatra
-  unicorn
+gems:  
+  eventmachine --pre  
+  amqp  
+  sinatra  
+  unicorn  
 
 ## Installation
 
@@ -31,12 +30,14 @@ bundle install
 
 unicorn.conf:
 _ You will probably want to adjust the worker_processes to fit your own needs.
-- amqp_server will need to be entered so it can connect to your AMQP server.
+- decide whether you are sending directly to carbon or to an AMQP cluster. Your mode options are "amqp" or "direct".
+- amqp_server will need to be entered if you want to use it in AMQP mode.
+- grahpite_server and graphite_port if you want to use it in direct mode.
 
 worker.rb:
-- prefix: this is by default set to "collectd", although in our environment it is set to "eharmony".
+- prefix: we use eharmony, but I've seen "collectd" and "servers" in others' solutions.
   Set this to whatever suits your needs.
-- amqp_exchange: name of your exchange. By default carbon binds to "graphite".
+- amqp_exchange: name of your exchange if using amqp. By default carbon binds to "graphite".
 
 ## Tuning
 
@@ -57,13 +58,15 @@ hose your network.
 
 ## To Do
 
-It has been suggested that there might be some benefit in using
+- It has been suggested that there might be some benefit in using
 (Rainbows!)[http://rainbows.rubyforge.org/] to handle all of the threading.
 This would just add a simple config to the unicorn.conf file:
     
     Rainbows! do
       use :ThreadSpawn
     end
+
+- Pickle suppoort
 
 ## Support and Documentation
 
